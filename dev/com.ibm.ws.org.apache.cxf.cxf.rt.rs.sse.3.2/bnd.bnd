@@ -21,6 +21,7 @@ instrument.classesExcludes: org/apache/cxf/jaxrs/sse/client/SseEventSourceImpl$I
 
 -buildpath: org.apache.cxf:cxf-rt-rs-sse;version=3.3.0,\
   com.ibm.websphere.javaee.jaxrs.2.1;version=latest,\
+  com.ibm.websphere.javaee.servlet.4.0;version=latest,\
   com.ibm.ws.logging.core;version=latest,\
   com.ibm.ws.org.apache.cxf.cxf.rt.rs.client.3.2;version=latest,\
   com.ibm.ws.org.apache.cxf.cxf.rt.frontend.jaxrs.3.2;version=latest,\

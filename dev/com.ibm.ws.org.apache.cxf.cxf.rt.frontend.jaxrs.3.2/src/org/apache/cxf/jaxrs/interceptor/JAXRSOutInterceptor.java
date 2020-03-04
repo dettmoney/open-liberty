@@ -60,6 +60,7 @@ import org.apache.cxf.jaxrs.utils.JAXRSUtils;
 import org.apache.cxf.message.Exchange;
 import org.apache.cxf.message.Message;
 import org.apache.cxf.message.MessageContentsList;
+import org.apache.cxf.message.MessageImpl;
 import org.apache.cxf.message.MessageUtils;
 import org.apache.cxf.phase.Phase;
 import org.apache.cxf.staxutils.CachingXmlEventWriter;
@@ -188,6 +189,7 @@ public class JAXRSOutInterceptor extends AbstractOutDatabindingInterceptor {
                 responseHeaders.putSingle(HttpHeaders.CONTENT_LENGTH, "0");
                 if (MessageUtils.getContextualBoolean(message, "remove.content.type.for.empty.response", false)) {
                     responseHeaders.remove(HttpHeaders.CONTENT_TYPE);
+                    //((MessageImpl) message).removeContentType();
                     message.remove(Message.CONTENT_TYPE);
                 }
             }
@@ -240,6 +242,7 @@ public class JAXRSOutInterceptor extends AbstractOutDatabindingInterceptor {
             Tr.debug(tc, "Response content type is: " + finalResponseContentType);
         }
         responseHeaders.putSingle(HttpHeaders.CONTENT_TYPE, finalResponseContentType);
+        //((MessageImpl) message).setContentType(finalResponseContentType);
         message.put(Message.CONTENT_TYPE, finalResponseContentType);
 
         boolean enabled = checkBufferingMode(message, writers, firstTry);
@@ -289,14 +292,17 @@ public class JAXRSOutInterceptor extends AbstractOutDatabindingInterceptor {
         if (entity != null) {
             Object customContentType = responseHeaders.getFirst(HttpHeaders.CONTENT_TYPE);
             if (customContentType == null) {
+                //String initialResponseContentType = (String)((MessageImpl) message).getContentType();
                 String initialResponseContentType = (String)message.get(Message.CONTENT_TYPE);
                 if (initialResponseContentType != null) {
                     responseHeaders.putSingle(HttpHeaders.CONTENT_TYPE, initialResponseContentType);
                 }
             } else {
+                //((MessageImpl) message).setContentType(customContentType.toString());
                 message.put(Message.CONTENT_TYPE, customContentType.toString());
             }
         }
+        //((MessageImpl) message).setProtocolHeaders((Map) responseHeaders);
         message.put(Message.PROTOCOL_HEADERS, responseHeaders);
         setResponseDate(responseHeaders, firstTry);
         return responseHeaders;
@@ -477,7 +483,7 @@ public class JAXRSOutInterceptor extends AbstractOutDatabindingInterceptor {
         boolean responseHeadersCopied = isResponseHeadersCopied(message);
         if (responseHeadersCopied) {
             HttpServletResponse response =
-                (HttpServletResponse)message.get(AbstractHTTPDestination.HTTP_RESPONSE);
+                (HttpServletResponse)((MessageImpl) message).getHttpResponse();
             response.setStatus(status);
         }
     }

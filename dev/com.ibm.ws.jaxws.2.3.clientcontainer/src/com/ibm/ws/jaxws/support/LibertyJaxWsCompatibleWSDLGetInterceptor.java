@@ -98,11 +98,15 @@ public class LibertyJaxWsCompatibleWSDLGetInterceptor extends WSDLGetInterceptor
      */
     @Override
     public void handleMessage(Message message) throws Fault {
+        //String method = ((MessageImpl) message).getHttpRequestMethod();
+        //String query = ((MessageImpl) message).getQueryString();
         String method = (String) message.get(Message.HTTP_REQUEST_METHOD);
         String query = (String) message.get(Message.QUERY_STRING);
         if (!"GET".equals(method) || StringUtils.isEmpty(query)) {
             return;
         }
+        //String baseUri = ((MessageImpl) message).getRequestURL();
+        //String ctx = ((MessageImpl) message).getPathInfo();
         String baseUri = (String) message.get(Message.REQUEST_URL);
         String ctx = (String) message.get(Message.PATH_INFO);
 

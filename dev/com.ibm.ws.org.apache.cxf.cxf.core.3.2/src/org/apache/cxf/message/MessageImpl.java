@@ -21,6 +21,7 @@ package org.apache.cxf.message;
 
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -43,6 +44,36 @@ public class MessageImpl extends StringMapImpl implements Message {
     private Object[] contents = new Object[20];
     private int index;
 
+    private Object httpServletRequest;
+    private Object httpServletResponse;
+    private Object servletContext;
+    private Object servletConfig;
+    private String servletContextMatchStrategy;
+    private String httpServletRequestMethod;
+    private String requestURI;
+    private String requestURL;
+    private String pathInfo;
+    private String httpBasePath;
+    private String contentType;
+    private String queryString;
+    private String acceptContentType;
+    private String basePath;
+    private Boolean fixedParameterOrder;
+    private Boolean asyncPostResponseDispatch;
+    private Object securityContext;
+    private Object authorizationPolicy;
+    private Object certConstraints;
+    private List interceptors;
+    private Map<String, List<String>> protocolHeaders;
+    private String encoding;
+    private String wsdlOperation;
+    private String wsdlService;
+    private String wsdlInterface;
+    private String wsdlPort;
+    private String wsdlDescription;
+    private Object opResInfoStack;
+    private Destination destination;
+    
     // Liberty change - used to avoid resize
     public MessageImpl(int isize, float factor) {
         super(isize, factor);
@@ -66,6 +97,245 @@ public class MessageImpl extends StringMapImpl implements Message {
         }
     }
 
+    public Object getHttpRequest() {
+        return httpServletRequest;
+    }
+    public void setHttpRequest(Object httpServletRequest) {
+        this.httpServletRequest = httpServletRequest;
+    }
+    public void removeHttpRequest() {
+        httpServletRequest = null;
+    }
+    public Object getHttpResponse() {
+        return httpServletResponse;
+    }
+    public void setHttpResponse(Object httpServletResponse) {
+        this.httpServletResponse = httpServletResponse;
+    }
+    public void removeHttpResponse() {
+        httpServletResponse = null;
+    }
+    public Object getServletContext() {
+        return servletContext;
+    }
+    public void setServletContext(Object servletContext) {
+        this.servletContext = servletContext;
+    }
+    public void removeServletContext() {
+        servletContext = null;
+    }
+    public Object getServletConfig() {
+        return servletConfig;
+    }
+    public void setServletConfig(Object servletConfig) {
+        this.servletConfig = servletConfig;
+    }
+    public void removeServletConfig() {
+        servletConfig = null;
+    }
+    public String getServletContextMatchStrategy() {
+        return servletContextMatchStrategy;
+    }
+    public void setServletContextMatchStrategy(String servletContextMatchStrategy) {
+        this.servletContextMatchStrategy = servletContextMatchStrategy;
+    }
+    public void removeServletContextMatchStrategy() {
+        servletContextMatchStrategy = null;
+    }
+    public Object getOperationResourceInfoStack() {
+        return opResInfoStack;
+    }
+    public void setOperationResourceInfoStack(Object stack) {
+        opResInfoStack = stack;
+    }
+    /*public String getHttpRequestMethod() {
+        return httpServletRequestMethod;
+    }
+    public void setHttpRequestMethod(String httpServletRequestMethod) {
+        this.httpServletRequestMethod = httpServletRequestMethod;
+    }
+    public void removeHttpRequestMethod() {
+        httpServletRequestMethod = null;
+    }
+    public String getRequestURI() {
+        return requestURI;
+    }
+    public void setRequestURI(String requestURI) {
+        this.requestURI = requestURI;
+    }
+    public void removeRequestURI() {
+        requestURI = null;
+    }
+    public String getRequestURL() {
+        return requestURL;
+    }
+    public void setRequestURL(String requestURL) {
+        this.requestURL = requestURL;
+    }
+    public void removeRequestURL() {
+        requestURL = null;
+    }
+    public String getPathInfo() {
+        return pathInfo;
+    }
+    public void setPathInfo(String pathInfo) {
+        this.pathInfo = pathInfo;
+    }
+    public void removePathInfo() {
+        pathInfo = null;
+    }
+    public String getHttpBasePath() {
+        return httpBasePath;
+    }
+    public void setHttpBasePath(String httpBasePath) {
+        this.httpBasePath = httpBasePath;
+    }
+    public void removeHttpBasePath() {
+        httpBasePath = null;
+    }
+    public String getContentType() {
+        return contentType;
+    }
+    public void setContentType(String contentType) {
+        this.contentType = contentType;
+    }
+    public void removeContentType() {
+        contentType = null;
+    }
+    public String getQueryString() {
+        return queryString;
+    }
+    public void setQueryString(String queryString) {
+        this.queryString = queryString;
+    }
+    public void removeQueryString() {
+        queryString = null;
+    }
+    public String getAcceptContentType() {
+        return acceptContentType;
+    }
+    public void setAcceptContentType(String acceptContentType) {
+        this.acceptContentType = acceptContentType;
+    }
+    public void removeAcceptContentType() {
+        acceptContentType = null;
+    }
+    public String getBasePath() {
+        return basePath;
+    }
+    public void setBasePath(String basePath) {
+        this.basePath = basePath;
+    }
+    public void removeBasePath() {
+        basePath = null;
+    }
+    public Boolean isFixedParameterOrder() {
+        return fixedParameterOrder;
+    }
+    public void setFixedParameterOrder(Boolean fixedParameterOrder) {
+        this.fixedParameterOrder = fixedParameterOrder;
+    }
+    public void removeFixedParameterOrder() {
+        fixedParameterOrder = null;
+    }
+    public Boolean isAsyncPostResponseDispatch() {
+        return asyncPostResponseDispatch;
+    }
+    public void setAsyncPostResponseDispatch(Boolean asyncPostResponseDispatch) {
+        this.asyncPostResponseDispatch = asyncPostResponseDispatch;
+    }
+    public void removeAsyncPostResponseDispatch() {
+        asyncPostResponseDispatch = null;
+    }
+    public Object getSecurityContext() {
+        return securityContext;
+    }
+    public void setSecurityContext(Object securityContext) {
+        this.securityContext = securityContext;
+    }
+    public void removeSecurityContext() {
+        securityContext = null;
+    }
+    public Object getAuthorizationPolicy() {
+        return authorizationPolicy;
+    }
+    public void setAuthorizationPolicy(Object authorizationPolicy) {
+        this.authorizationPolicy = authorizationPolicy;
+    }
+    public void removeAuthorizationPolicy() {
+        authorizationPolicy = null;
+    }
+    public Object getCertConstraints() {
+        return certConstraints;
+    }
+    public void setCertConstraints(Object certConstraints) {
+        this.certConstraints = certConstraints;
+    }
+    public void removeCertConstraints() {
+        certConstraints = null;
+    }
+    public List getInterceptors() {
+        return interceptors;
+    }
+    public void setInterceptors(List interceptors) {
+        this.interceptors = interceptors;
+    }
+    public void removeInterceptors() {
+        interceptors = null;
+    }
+    public Map<String, List<String>> getProtocolHeaders() {
+        System.out.println("***JTD: getProtocolHeaders " + protocolHeaders);
+        return protocolHeaders;
+    }
+    public void setProtocolHeaders(Map<String, List<String>> protocolHeaders) {
+        System.out.println("***JTD: setting protocol headers " + protocolHeaders);
+        Thread.dumpStack();
+        this.protocolHeaders = protocolHeaders;
+    }
+    public void removeProtocolHeaders() {
+        System.out.println("***JTD: removeProtocolHeaders " + protocolHeaders);
+        protocolHeaders = null;
+    }
+    public String getEncoding() {
+        return encoding;
+    }
+    public void setEncoding(String encoding) {
+        this.encoding = encoding;
+    }
+    public void removeEncoding() {
+        encoding = null;
+    }*/
+    public String getWsdlOperation() {
+        return wsdlOperation;
+    }
+    public void setWsdlOperation(String wsdlOperation) {
+        this.wsdlOperation = wsdlOperation;
+    }
+    public String getWsdlService() {
+        return wsdlService;
+    }
+    public void setWsdlService(String wsdlService) {
+        this.wsdlService = wsdlService;
+    }
+    public String getWsdlInterface() {
+        return wsdlInterface;
+    }
+    public void setWsdlInterface(String wsdlInterface) {
+        this.wsdlInterface = wsdlInterface;
+    }
+    public String getWsdlPort() {
+        return wsdlPort;
+    }
+    public void setWsdlPort(String wsdlPort) {
+        this.wsdlPort = wsdlPort;
+    }
+    public String getWsdlDescription() {
+        return wsdlDescription;
+    }
+    public void setWsdlDescription(String wsdlDescription) {
+        this.wsdlDescription = wsdlDescription;
+    }
+
     @Override
     public Collection<Attachment> getAttachments() {
         return CastUtils.cast((Collection<?>) get(ATTACHMENTS));
@@ -83,7 +353,7 @@ public class MessageImpl extends StringMapImpl implements Message {
 
     @Override
     public Destination getDestination() {
-        return get(Destination.class);
+        return destination;
     }
 
     @Override
@@ -159,7 +429,7 @@ public class MessageImpl extends StringMapImpl implements Message {
     }
 
     public void setDestination(Destination d) {
-        put(Destination.class, d);
+        destination = d;
     }
 
     @Override
@@ -191,7 +461,7 @@ public class MessageImpl extends StringMapImpl implements Message {
         return getFromExchange(key);
     }
 
-    private Object getFromExchange(String key) {
+    public Object getFromExchange(String key) {
         Exchange ex = getExchange();
         if (ex != null) {
             Object o = ex.getOrDefault(key, NOT_FOUND);

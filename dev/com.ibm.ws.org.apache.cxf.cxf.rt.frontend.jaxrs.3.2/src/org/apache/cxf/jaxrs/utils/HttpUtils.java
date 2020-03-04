@@ -62,6 +62,7 @@ import org.apache.cxf.jaxrs.impl.PathSegmentImpl;
 import org.apache.cxf.jaxrs.impl.RuntimeDelegateImpl;
 import org.apache.cxf.jaxrs.model.ParameterType;
 import org.apache.cxf.message.Message;
+import org.apache.cxf.message.MessageImpl;
 import org.apache.cxf.transport.Destination;
 import org.apache.cxf.transport.http.AbstractHTTPDestination;
 import org.apache.cxf.transport.http.Headers;
@@ -363,17 +364,17 @@ public final class HttpUtils {
     }
 
     public static boolean isHttpRequest(Message message) {
-        return message.get(AbstractHTTPDestination.HTTP_REQUEST) != null;
+        return ((MessageImpl) message).getHttpRequest() != null;
     }
 
     public static URI toAbsoluteUri(String relativePath, Message message) {
         String base = BaseUrlHelper.getBaseURL(
-                                               (HttpServletRequest) message.get(AbstractHTTPDestination.HTTP_REQUEST));
+                                               (HttpServletRequest) ((MessageImpl) message).getHttpRequest());
         return URI.create(base + relativePath);
     }
 
     public static URI toAbsoluteUri(URI u, Message message) {
-        HttpServletRequest request = (HttpServletRequest) message.get(AbstractHTTPDestination.HTTP_REQUEST);
+        HttpServletRequest request = (HttpServletRequest) ((MessageImpl) message).getHttpRequest();
         boolean absolute = u.isAbsolute();
         StringBuilder uriBuf = new StringBuilder();
         if (request != null && (!absolute || isLocalHostOrAnyIpAddress(u, uriBuf, message))) {
@@ -423,6 +424,7 @@ public final class HttpUtils {
     public static void resetRequestURI(Message m, String requestURI) {
         m.remove(REQUEST_PATH_TO_MATCH_SLASH);
         m.remove(REQUEST_PATH_TO_MATCH);
+        //((MessageImpl) m).setRequestURI(requestURI);
         m.put(Message.REQUEST_URI, requestURI);
     }
 
@@ -433,10 +435,12 @@ public final class HttpUtils {
             return pathToMatch;
         }
         String requestAddress = getProtocolHeader(m, Message.REQUEST_URI, "/");
+        //if (((MessageImpl) m).getQueryString() == null) {
         if (m.get(Message.QUERY_STRING) == null) {
             int index = requestAddress.lastIndexOf('?');
             if (index > 0 && index < requestAddress.length()) {
-                m.put(Message.QUERY_STRING, requestAddress.substring(index + 1));
+                //((MessageImpl) m).setQueryString(requestAddress.substring(index + 1));
+            	m.put(Message.QUERY_STRING, requestAddress.substring(index + 1));
                 requestAddress = requestAddress.substring(0, index);
             }
         }
@@ -561,13 +565,14 @@ public final class HttpUtils {
         Destination d = m.getExchange().getDestination();
         if (d != null) {
             if (d instanceof AbstractHTTPDestination) {
-                HttpServletRequest request = (HttpServletRequest) m.get(AbstractHTTPDestination.HTTP_REQUEST);
+                HttpServletRequest request = (HttpServletRequest) ((MessageImpl) m).getHttpRequest();
                 Object property = request != null ? request.getAttribute("org.apache.cxf.transport.endpoint.address") : null;
                 //Liberty code change start
                 address = property != null ? property.toString() : ((AbstractHTTPDestination) d).getEndpointInfo().getAddress();
                 //Liberty code change end
             } else {
-                address = m.containsKey(Message.BASE_PATH) ? (String) m.get(Message.BASE_PATH) : d.getAddress().getAddress().getValue();
+                //address = ((MessageImpl) m).getBasePath() != null ? (String) ((MessageImpl) m).getBasePath() : d.getAddress().getAddress().getValue();
+            	address = m.containsKey(Message.BASE_PATH) ? (String) m.get(Message.BASE_PATH) : d.getAddress().getAddress().getValue();
             }
         } else {
             address = (String) m.get(Message.ENDPOINT_ADDRESS);
@@ -587,6 +592,7 @@ public final class HttpUtils {
         } else if (!pathSlash && !baseSlash) {
             path = "/" + path;
         }
+        //((MessageImpl) m).setRequestURI(baseAddress + path);
         m.put(Message.REQUEST_URI, baseAddress + path);
         m.remove(REQUEST_PATH_TO_MATCH);
         m.remove(REQUEST_PATH_TO_MATCH_SLASH);
@@ -774,15 +780,15 @@ public final class HttpUtils {
 
         Object value = null;
         if (clazz == HttpServletRequest.class) {
-            HttpServletRequest request = (HttpServletRequest) m.get(AbstractHTTPDestination.HTTP_REQUEST);
+            HttpServletRequest request = (HttpServletRequest) ((MessageImpl) m).getHttpRequest();
             value = request != null ? new HttpServletRequestFilter(request, m) : null;
         } else if (clazz == HttpServletResponse.class) {
-            HttpServletResponse response = (HttpServletResponse) m.get(AbstractHTTPDestination.HTTP_RESPONSE);
+            HttpServletResponse response = (HttpServletResponse) ((MessageImpl) m).getHttpResponse();
             value = response != null ? new HttpServletResponseFilter(response, m) : null;
         } else if (clazz == ServletContext.class) {
-            value = m.get(AbstractHTTPDestination.HTTP_CONTEXT);
+            value = ((MessageImpl) m).getServletContext();
         } else if (clazz == ServletConfig.class) {
-            value = m.get(AbstractHTTPDestination.HTTP_CONFIG);
+            value = ((MessageImpl) m).getServletConfig();
         }
 
         return clazz.cast(value);

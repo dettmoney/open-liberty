@@ -947,6 +947,7 @@ public abstract class AbstractClient implements Client {
             URI baseAddress = URI.create(address);
             currentURI = calculateNewRequestURI(baseAddress, currentURI, proxy);
             message.put(Message.ENDPOINT_ADDRESS, currentURI.toString());
+            //((MessageImpl) message).setRequestURI(currentURI.toString());
             message.put(Message.REQUEST_URI, currentURI.toString());
         }
         message.put(Message.BASE_PATH, getBaseURI().toString());
@@ -1016,9 +1017,11 @@ public abstract class AbstractClient implements Client {
 
         Object requestURIProperty = cfg.getRequestContext().get(Message.REQUEST_URI);
         if (requestURIProperty == null) {
-            m.put(Message.REQUEST_URI, currentURI.toString());
+            //((MessageImpl) m).setRequestURI(currentURI.toString());
+        	m.put(Message.REQUEST_URI, currentURI.toString());
         } else {
-            m.put(Message.REQUEST_URI, requestURIProperty.toString());
+            //((MessageImpl) m).setRequestURI(requestURIProperty.toString());
+        	m.put(Message.REQUEST_URI, requestURIProperty.toString());
         }
 
         String ct = headers.getFirst(HttpHeaders.CONTENT_TYPE);
@@ -1050,7 +1053,8 @@ public abstract class AbstractClient implements Client {
     }
 
     private void setRequestMethod(Message m, String httpMethod) {
-        m.put(Message.HTTP_REQUEST_METHOD, httpMethod);
+        //((MessageImpl) m).setHttpRequestMethod(httpMethod);
+    	m.put(Message.HTTP_REQUEST_METHOD, httpMethod);
         if (!KNOWN_METHODS.contains(httpMethod)) {
             if (!m.containsKey("use.async.http.conduit")) {
                 // if the async conduit is loaded then let it handle this method without users
@@ -1146,6 +1150,8 @@ public abstract class AbstractClient implements Client {
             reqContext = new HashMap<>(cfg.getRequestContext());
             context.put(REQUEST_CONTEXT, reqContext);
         }
+        //reqContext.put(Message.PROTOCOL_HEADERS, ((MessageImpl) message).getProtocolHeaders());
+        //reqContext.put(Message.REQUEST_URI, ((MessageImpl) message).getRequestURI());
         reqContext.put(Message.PROTOCOL_HEADERS, message.get(Message.PROTOCOL_HEADERS));
         reqContext.put(Message.REQUEST_URI, message.get(Message.REQUEST_URI));
         reqContext.put(Message.ENDPOINT_ADDRESS, message.get(Message.ENDPOINT_ADDRESS));

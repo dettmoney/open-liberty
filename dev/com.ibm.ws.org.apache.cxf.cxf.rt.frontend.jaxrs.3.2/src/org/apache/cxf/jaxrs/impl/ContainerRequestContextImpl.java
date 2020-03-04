@@ -33,6 +33,7 @@ import org.apache.cxf.io.DelegatingInputStream;
 import org.apache.cxf.jaxrs.utils.ExceptionUtils;
 import org.apache.cxf.jaxrs.utils.HttpUtils;
 import org.apache.cxf.message.Message;
+import org.apache.cxf.message.MessageImpl;
 
 public class ContainerRequestContextImpl extends AbstractRequestContextImpl
     implements ContainerRequestContext {
@@ -58,6 +59,7 @@ public class ContainerRequestContextImpl extends AbstractRequestContextImpl
 
     @Override
     public SecurityContext getSecurityContext() {
+        //SecurityContext sc = (SecurityContext) ((MessageImpl) m).getSecurityContext();
         SecurityContext sc = m.get(SecurityContext.class);
         return sc == null ? new SecurityContextImpl(m) : sc;
     }
@@ -131,6 +133,7 @@ public class ContainerRequestContextImpl extends AbstractRequestContextImpl
         HttpUtils.resetRequestURI(m, requestUri.toString());
         String query = requestUri.getRawQuery();
         if (query != null) {
+            //((MessageImpl) m).setQueryString(query);
             m.put(Message.QUERY_STRING, query);
         }
     }
@@ -138,7 +141,7 @@ public class ContainerRequestContextImpl extends AbstractRequestContextImpl
     @Override
     public void setRequestUri(URI baseUri, URI requestUri) throws IllegalStateException {
         doSetRequestUri(requestUri);
-        Object servletRequest = m.get("HTTP.REQUEST");
+        Object servletRequest = ((MessageImpl) m).getHttpRequest();
         if (servletRequest != null) {
             ((javax.servlet.http.HttpServletRequest)servletRequest)
                 .setAttribute(ENDPOINT_ADDRESS_PROPERTY, baseUri.toString());
@@ -148,6 +151,7 @@ public class ContainerRequestContextImpl extends AbstractRequestContextImpl
     @Override
     public void setSecurityContext(SecurityContext sc) {
         checkContext();
+        //((MessageImpl) m).setSecurityContext(sc);
         m.put(SecurityContext.class, sc);
         if (sc instanceof org.apache.cxf.security.SecurityContext) {
             m.put(org.apache.cxf.security.SecurityContext.class,

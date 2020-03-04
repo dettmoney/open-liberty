@@ -68,6 +68,7 @@ import org.apache.cxf.jaxrs.utils.JAXRSUtils;
 import org.apache.cxf.message.Exchange;
 import org.apache.cxf.message.Message;
 import org.apache.cxf.message.MessageContentsList;
+import org.apache.cxf.message.MessageImpl;
 import org.apache.cxf.service.invoker.AbstractInvoker;
 
 public class JAXRSInvoker extends AbstractInvoker {
@@ -233,6 +234,8 @@ public class JAXRSInvoker extends AbstractInvoker {
             try {
                 MultivaluedMap<String, String> values = getTemplateValues(inMessage);
                 String subResourcePath = values.getFirst(URITemplate.FINAL_MATCH_GROUP);
+                //String httpMethod = (String)((MessageImpl) inMessage).getHttpRequestMethod();
+                //String contentType = (String)((MessageImpl) inMessage).getContentType();
                 String httpMethod = (String)inMessage.get(Message.HTTP_REQUEST_METHOD);
                 String contentType = (String)inMessage.get(Message.CONTENT_TYPE);
                 if (contentType == null) {
@@ -296,7 +299,8 @@ public class JAXRSInvoker extends AbstractInvoker {
             } catch (WebApplicationException ex) {
                 Response excResponse;
                 if (JAXRSUtils.noResourceMethodForOptions(ex.getResponse(),
-                        (String)inMessage.get(Message.HTTP_REQUEST_METHOD))) {
+                        //(String)((MessageImpl) inMessage).getHttpRequestMethod())) {
+                		(String)inMessage.get(Message.HTTP_REQUEST_METHOD))) {
                     excResponse = JAXRSUtils.createResponse(Collections.singletonList(subCri),
                                                             null, null, 200, true);
                 } else {

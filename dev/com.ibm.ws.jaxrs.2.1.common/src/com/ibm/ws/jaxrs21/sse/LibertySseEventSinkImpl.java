@@ -31,6 +31,7 @@ import org.apache.cxf.jaxrs.provider.ServerProviderFactory;
 import org.apache.cxf.jaxrs.sse.NoSuitableMessageBodyWriterException;
 import org.apache.cxf.jaxrs.utils.JAXRSUtils;
 import org.apache.cxf.message.Message;
+import org.apache.cxf.message.MessageImpl;
 import org.apache.cxf.transport.http.AbstractHTTPDestination;
 
 import com.ibm.websphere.ras.Tr;
@@ -80,7 +81,7 @@ public class LibertySseEventSinkImpl implements SseEventSink {
             closed = true;
             try {
                 response.getOutputStream().close();
-                HttpServletRequest req = (HttpServletRequest) message.get(AbstractHTTPDestination.HTTP_REQUEST);
+                HttpServletRequest req = (HttpServletRequest) ((MessageImpl) message).getHttpRequest();
                 if (req != null) {
                     req.getAsyncContext().complete();
                 }

@@ -33,6 +33,7 @@ import org.apache.cxf.configuration.jsse.TLSClientParameters;
 import org.apache.cxf.helpers.IOUtils;
 import org.apache.cxf.io.CacheAndWriteOutputStream;
 import org.apache.cxf.message.Message;
+import org.apache.cxf.message.MessageImpl;
 import org.apache.cxf.message.MessageUtils;
 import org.apache.cxf.service.model.EndpointInfo;
 import org.apache.cxf.transport.http.Address;
@@ -446,9 +447,11 @@ public class LibertyHTTPConduit extends HTTPConduit {
         connection.setInstanceFollowRedirects(false);
 
         // If the HTTP_REQUEST_METHOD is not set, the default is "POST".
+        //String httpRequestMethod = ((MessageImpl) message).getHttpRequestMethod();
         String httpRequestMethod = (String) message.get(Message.HTTP_REQUEST_METHOD);
         if (httpRequestMethod == null) {
             httpRequestMethod = "POST";
+            //((MessageImpl) message).setHttpRequestMethod("POST");
             message.put(Message.HTTP_REQUEST_METHOD, "POST");
         }
         try {

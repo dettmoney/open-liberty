@@ -18,6 +18,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.cxf.jaxws.context.WrappedMessageContext;
 import org.apache.cxf.message.Exchange;
 import org.apache.cxf.message.Message;
+import org.apache.cxf.message.MessageImpl;
 import org.apache.cxf.message.MessageUtils;
 import org.apache.cxf.transport.http.AbstractHTTPDestination;
 
@@ -84,13 +85,13 @@ public class GlobalHandlerJaxWsMessageContext extends WrappedMessageContext impl
 
     @Override
     public HttpServletRequest getHttpServletRequest() {
-        HttpServletRequest request = (HttpServletRequest) message.get(AbstractHTTPDestination.HTTP_REQUEST);
+        HttpServletRequest request = (HttpServletRequest) ((MessageImpl) message).getHttpRequest();
         return request;
     }
 
     @Override
     public HttpServletResponse getHttpServletResponse() {
-        HttpServletResponse response = (HttpServletResponse) message.get(AbstractHTTPDestination.HTTP_RESPONSE);
+        HttpServletResponse response = (HttpServletResponse) ((MessageImpl) message).getHttpResponse();
         return response;
     }
 

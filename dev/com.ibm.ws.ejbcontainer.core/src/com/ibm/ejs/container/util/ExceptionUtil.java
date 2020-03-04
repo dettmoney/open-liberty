@@ -92,15 +92,19 @@ public class ExceptionUtil {
 
         if (m == null) {
             if (beanId == null) {
-                Tr.error(compTc, "NON_APPLICATION_EXCEPTION_CNTR0018E", t);
-            } else {
+                if (compTc.isErrorEnabled()) {
+                    Tr.error(compTc, "NON_APPLICATION_EXCEPTION_CNTR0018E", t);
+                }
+            } else if (compTc.isErrorEnabled()) {
                 Tr.error(compTc, "NON_APPLICATION_EXCEPTION_ON_BEAN_CNTR0021E", new Object[] { t, beanId });
             }
         } else {
             String methodName = m.getMethodName();
             if (beanId == null) {
-                Tr.error(compTc, "NON_APPLICATION_EXCEPTION_METHOD_CNTR0019E", new Object[] { t, methodName });
-            } else {
+                if (compTc.isErrorEnabled()) {
+                    Tr.error(compTc, "NON_APPLICATION_EXCEPTION_METHOD_CNTR0019E", new Object[] { t, methodName });
+                }
+            } else if (compTc.isErrorEnabled()) {
                 Tr.error(compTc, "NON_APPLICATION_EXCEPTION_METHOD_ON_BEAN_CNTR0020E", new Object[] { t, methodName, beanId });
             }
 
@@ -122,7 +126,7 @@ public class ExceptionUtil {
      * and return the last one in the chain as the root cause.
      *
      * @param throwable must be a non-null reference of a Throwable object
-     *            to be processed.
+     *                      to be processed.
      **/
     static public Throwable findRootCause(Throwable throwable) {
         if (TraceComponent.isAnyTracingEnabled() && tc.isEntryEnabled()) {
@@ -201,7 +205,7 @@ public class ExceptionUtil {
      * exception. <p>
      *
      * @param throwable must be a non-null reference of a Throwable object
-     *            to be processed.
+     *                      to be processed.
      *
      * @return the 'external' cause of the specified exception, or null.
      **/
@@ -276,7 +280,7 @@ public class ExceptionUtil {
      * message text is hard coded at "See nested exception" for convenience. <p>
      *
      * @param cause the cause of the EJBException. If already an EJBException
-     *            it will just be returned; null is permitted.
+     *                  it will just be returned; null is permitted.
      * @returns an EJBException with appropriate nested exception, stack,
      *          and message text.
      **/
@@ -318,8 +322,8 @@ public class ExceptionUtil {
      * already be an EJBException. <p>
      *
      * @param message the preferred message text for the returned EJBException.
-     * @param cause the cause of the EJBException. If already an EJBException
-     *            it will just be returned; null is permitted.
+     * @param cause   the cause of the EJBException. If already an EJBException
+     *                    it will just be returned; null is permitted.
      * @returns an EJBException with appropriate nested exception, stack,
      *          and message text.
      **/
@@ -415,7 +419,7 @@ public class ExceptionUtil {
      * cause. The cause will be nested even if it is a NoSuchEJBException. <p>
      *
      * @param message the message text for the returned NoSuchEJBException.
-     * @param cause the cause of the NoSuchEJBException; null is permitted.
+     * @param cause   the cause of the NoSuchEJBException; null is permitted.
      * @returns a NoSuchEJBException with appropriate nested exception, stack,
      *          and message text.
      **/
@@ -455,7 +459,7 @@ public class ExceptionUtil {
      * message text is hard coded at "See nested exception" for convenience. <p>
      *
      * @param cause the cause of the RemoteException. If already a RemoteException
-     *            it will just be returned; null is permitted.
+     *                  it will just be returned; null is permitted.
      * @returns a RemoteException with appropriate nested exception, stack,
      *          and message text.
      **/
@@ -489,8 +493,8 @@ public class ExceptionUtil {
      * already be a RemoteException. <p>
      *
      * @param message the preferred message text for the returned RemoteException.
-     * @param cause the cause of the RemoteException. If already a RemoteException
-     *            it will just be returned; null is permitted.
+     * @param cause   the cause of the RemoteException. If already a RemoteException
+     *                    it will just be returned; null is permitted.
      * @returns a RemoteException with appropriate nested exception, stack,
      *          and message text.
      **/

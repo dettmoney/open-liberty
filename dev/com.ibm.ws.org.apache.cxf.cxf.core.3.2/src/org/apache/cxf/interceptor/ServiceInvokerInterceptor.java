@@ -166,10 +166,10 @@ public class ServiceInvokerInterceptor extends AbstractPhaseInterceptor<Message>
     }
 
     private void copyJaxwsProperties(Message inMsg, Message outMsg) {
-        outMsg.put(Message.WSDL_OPERATION, inMsg.get(Message.WSDL_OPERATION));
-        outMsg.put(Message.WSDL_SERVICE, inMsg.get(Message.WSDL_SERVICE));
-        outMsg.put(Message.WSDL_INTERFACE, inMsg.get(Message.WSDL_INTERFACE));
-        outMsg.put(Message.WSDL_PORT, inMsg.get(Message.WSDL_PORT));
-        outMsg.put(Message.WSDL_DESCRIPTION, inMsg.get(Message.WSDL_DESCRIPTION));
+        ((MessageImpl) outMsg).setWsdlOperation(((MessageImpl) inMsg).getWsdlOperation());
+        ((MessageImpl) outMsg).setWsdlService(((MessageImpl) inMsg).getWsdlService());
+        ((MessageImpl) outMsg).setWsdlInterface(((MessageImpl) inMsg).getWsdlInterface());
+        ((MessageImpl) outMsg).setWsdlPort(((MessageImpl) inMsg).getWsdlPort());
+        ((MessageImpl) outMsg).setWsdlDescription(((MessageImpl) inMsg).getWsdlDescription());
     }
 }

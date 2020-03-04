@@ -37,6 +37,7 @@ import org.apache.cxf.interceptor.InterceptorProvider;
 import org.apache.cxf.message.Exchange;
 import org.apache.cxf.message.ExchangeImpl;
 import org.apache.cxf.message.Message;
+import org.apache.cxf.message.MessageImpl;
 import org.apache.cxf.phase.PhaseChainCache;
 import org.apache.cxf.phase.PhaseManager;
 import org.apache.cxf.service.Service;
@@ -143,11 +144,13 @@ public class ChainInitiationObserver implements MessageObserver {
                 chain.add(p.getInInterceptors());
             }
         }
+        //Collection<Interceptor<? extends Message>> is = CastUtils.cast((Collection<?>) ((MessageImpl) m).getInterceptors());
         Collection<Interceptor<? extends Message>> is = CastUtils.cast((Collection<?>) m.get(Message.IN_INTERCEPTORS));
         if (is != null) {
             //this helps to detect if need add CertConstraintsInterceptor to chain
-            String rqURL = (String) m.get(Message.REQUEST_URL);
-            boolean isHttps = (rqURL != null && rqURL.indexOf("https:") > -1) ? true : false;
+            //String rqURL = (String) ((MessageImpl) m).getRequestURL();
+        	String rqURL = (String) m.get(Message.REQUEST_URL);
+        	boolean isHttps = (rqURL != null && rqURL.indexOf("https:") > -1) ? true : false;
             for (Interceptor<? extends Message> i : is) {
                 if (i instanceof CertConstraintsInterceptor && isHttps == false) {
                     continue;

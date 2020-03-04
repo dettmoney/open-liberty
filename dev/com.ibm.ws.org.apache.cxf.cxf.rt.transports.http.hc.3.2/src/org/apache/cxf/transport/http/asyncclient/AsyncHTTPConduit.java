@@ -62,6 +62,7 @@ import org.apache.cxf.io.CacheAndWriteOutputStream;
 import org.apache.cxf.io.CachedOutputStream;
 import org.apache.cxf.io.CopyingOutputStream;
 import org.apache.cxf.message.Message;
+import org.apache.cxf.message.MessageImpl;
 import org.apache.cxf.message.MessageUtils;
 import org.apache.cxf.service.model.EndpointInfo;
 import org.apache.cxf.transport.http.Address;
@@ -207,9 +208,11 @@ public class AsyncHTTPConduit extends URLConnectionHTTPConduit {
         }
         message.put("http.scheme", uri.getScheme());
         String httpRequestMethod =
-            (String)message.get(Message.HTTP_REQUEST_METHOD);
+            //(String)((MessageImpl) message).getHttpRequestMethod();
+        		(String)message.get(Message.HTTP_REQUEST_METHOD);
         if (httpRequestMethod == null) {
             httpRequestMethod = "POST";
+            //((MessageImpl) message).setHttpRequestMethod(httpRequestMethod);
             message.put(Message.HTTP_REQUEST_METHOD, httpRequestMethod);
         }
         final CXFHttpRequest e = new CXFHttpRequest(httpRequestMethod);
@@ -219,6 +222,7 @@ public class AsyncHTTPConduit extends URLConnectionHTTPConduit {
             }
         };
         entity.setChunked(true);
+        //entity.setContentType(((MessageImpl) message).getContentType());
         entity.setContentType((String)message.get(Message.CONTENT_TYPE));
         e.setURI(uri);
 
@@ -731,6 +735,7 @@ public class AsyncHTTPConduit extends URLConnectionHTTPConduit {
                 throw new IOException("Could not verify host " + url.getHost());
             }
 
+            //String method = (String)((MessageImpl) outMessage).getHttpRequestMethod();
             String method = (String)outMessage.get(Message.HTTP_REQUEST_METHOD);
             String cipherSuite = null;
             Certificate[] localCerts = null;

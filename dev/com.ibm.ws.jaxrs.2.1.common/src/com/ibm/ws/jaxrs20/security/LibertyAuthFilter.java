@@ -25,6 +25,7 @@ import org.apache.cxf.interceptor.security.AccessDeniedException;
 import org.apache.cxf.interceptor.security.AuthenticationException;
 import org.apache.cxf.jaxrs.utils.JAXRSUtils;
 import org.apache.cxf.message.Message;
+import org.apache.cxf.message.MessageImpl;
 import org.apache.cxf.transport.http.AbstractHTTPDestination;
 
 import com.ibm.ws.ffdc.annotation.FFDCIgnore;
@@ -57,8 +58,8 @@ public class LibertyAuthFilter implements ContainerRequestFilter {
     }
 
     private boolean authenticate(Message m) {
-        HttpServletRequest req = (HttpServletRequest) m.get(AbstractHTTPDestination.HTTP_REQUEST);
-        HttpServletResponse res = (HttpServletResponse) m.get(AbstractHTTPDestination.HTTP_RESPONSE);
+        HttpServletRequest req = (HttpServletRequest) ((MessageImpl) m).getHttpRequest();
+        HttpServletResponse res = (HttpServletResponse) ((MessageImpl) m).getHttpResponse();
         try {
             return req.authenticate(res);
         } catch (IOException | ServletException e) {

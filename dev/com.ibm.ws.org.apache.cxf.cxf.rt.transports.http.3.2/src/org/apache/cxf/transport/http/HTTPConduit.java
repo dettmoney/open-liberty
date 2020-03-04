@@ -515,9 +515,11 @@ public abstract class HTTPConduit
 
         // If the HTTP_REQUEST_METHOD is not set, the default is "POST".
         String httpRequestMethod =
-            (String)message.get(Message.HTTP_REQUEST_METHOD);
+            //(String)((MessageImpl) message).getHttpRequestMethod();
+                (String)message.get(Message.HTTP_REQUEST_METHOD);
         if (httpRequestMethod == null) {
             httpRequestMethod = "POST";
+            //((MessageImpl) message).setHttpRequestMethod("POST");
             message.put(Message.HTTP_REQUEST_METHOD, "POST");
         }
 
@@ -566,8 +568,9 @@ public abstract class HTTPConduit
 
 
         if (certConstraints != null) {
-            message.put(CertConstraints.class.getName(), certConstraints);
-            message.getInterceptorChain().add(CertConstraintsInterceptor.INSTANCE);
+            //((MessageImpl) message).setCertConstraints(certConstraints);
+        	message.put(CertConstraints.class.getName(), certConstraints);
+        	message.getInterceptorChain().add(CertConstraintsInterceptor.INSTANCE);
         }
 
         setHeadersByAuthorizationPolicy(message, currentAddress.getURI());
@@ -714,6 +717,8 @@ public abstract class HTTPConduit
      */
     private Address setupAddress(Message message) throws URISyntaxException {
         String result = (String)message.get(Message.ENDPOINT_ADDRESS);
+        //String pathInfo = (String)((MessageImpl) message).getPathInfo();
+        //String queryString = (String)((MessageImpl) message).getQueryString();
         String pathInfo = (String)message.get(Message.PATH_INFO);
         String queryString = (String)message.get(Message.QUERY_STRING);
         setAndGetDefaultAddress();
@@ -1087,10 +1092,11 @@ public abstract class HTTPConduit
             inMessage.put(Message.RESPONSE_CODE, HttpURLConnection.HTTP_OK);
 
             // remove server-specific properties
-            inMessage.remove(AbstractHTTPDestination.HTTP_REQUEST);
-            inMessage.remove(AbstractHTTPDestination.HTTP_RESPONSE);
+            ((MessageImpl) inMessage).removeHttpRequest();
+            ((MessageImpl) inMessage).removeHttpResponse();
+            //((MessageImpl) inMessage).removeAsyncPostResponseDispatch();
             inMessage.remove(Message.ASYNC_POST_RESPONSE_DISPATCH);
-
+            
             //cache this inputstream since it's defer to use in case of async
             try {
                 InputStream in = inMessage.getContent(InputStream.class);
@@ -1362,7 +1368,8 @@ public abstract class HTTPConduit
             }
         }
         protected String getMethod() {
-            return (String)outMessage.get(Message.HTTP_REQUEST_METHOD);
+            //return (String)((MessageImpl) outMessage).getHttpRequestMethod();
+        	return (String)outMessage.get(Message.HTTP_REQUEST_METHOD);
         }
 
 
@@ -1725,6 +1732,7 @@ public abstract class HTTPConduit
                 cachedStream = null;
             }
 
+            //String charset = HttpHeaderHelper.findCharset((String)((MessageImpl) inMessage).getContentType());
             String charset = HttpHeaderHelper.findCharset((String)inMessage.get(Message.CONTENT_TYPE));
             String normalizedEncoding = HttpHeaderHelper.mapCharset(charset);
             if (normalizedEncoding == null) {
@@ -1733,6 +1741,7 @@ public abstract class HTTPConduit
                 LOG.log(Level.WARNING, m);
                 throw new IOException(m);
             }
+            //((MessageImpl) inMessage).setEncoding(normalizedEncoding);
             inMessage.put(Message.ENCODING, normalizedEncoding);
             if (in == null) {
                 in = getInputStream();

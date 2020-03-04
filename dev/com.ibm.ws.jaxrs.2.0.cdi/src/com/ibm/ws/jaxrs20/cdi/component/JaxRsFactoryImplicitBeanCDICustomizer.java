@@ -241,11 +241,26 @@ public class JaxRsFactoryImplicitBeanCDICustomizer implements JaxRsFactoryBeanCu
 
         Class<?> clazz = serviceObject.getClass();
         //temp fix for session problem
-
-        Object rtn = getClassFromCDI(clazz);
-        if (rtn != null) {
-            return (T) rtn;
-        }
+        /*
+         * Map<Class, Object> objectCache = new HashMap<Class, Object>();
+         * 
+         * System.out.println("***JTD: getInstanceFromManagedObject " + clazz);
+         * if (objectCache.containsKey(clazz)) {
+         * System.out.println("***JTD: getInstanceFromManagedObject returning from cache " + objectCache.get(clazz));
+         * return (T) objectCache.get(clazz);
+         * } else {
+         * Object rtn = getClassFromCDI(clazz);
+         * if (rtn != null) {
+         * objectCache.put(clazz, rtn);
+         * System.out.println("***JTD: getInstanceFromManagedObject returning uncached " + rtn);
+         * return (T) rtn;
+         * }
+         * }
+         */
+        //Object rtn = getClassFromCDI(clazz);
+        //if (rtn != null) {
+        //    return (T) rtn;
+        //}
         //end temp fix
         Map<Class<?>, ManagedObject<?>> newContext = (Map<Class<?>, ManagedObject<?>>) (context);
 

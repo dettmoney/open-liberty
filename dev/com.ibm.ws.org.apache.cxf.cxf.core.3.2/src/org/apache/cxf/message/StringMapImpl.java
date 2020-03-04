@@ -46,14 +46,27 @@ public class StringMapImpl
     @Override
     @SuppressWarnings("unchecked")
     public <T> T get(Class<T> key) {
+        System.out.println("***JTD get1 " + key.getName());
         return (T) get(key.getName());
     }
 
     @Override
-    public <T> void put(Class<T> key, T value) {
-        put(key.getName(), value);
+    public Object put(String key, Object value) {
+        System.out.println("***JTD put2 " + key);
+        return super.put(key, value);
     }
 
+    @Override
+    public Object get(Object key) {
+        System.out.println("***JTD get2 " + key);
+        return super.get(key);
+    }
+
+    @Override
+    public <T> void put(Class<T> key, T value) {
+        System.out.println("***JTD put1 " + key.getName());
+        put(key.getName(), value);
+    }
 
     public <T> T remove(Class<T> key) {
         return key.cast(remove(key.getName()));

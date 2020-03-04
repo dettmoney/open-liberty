@@ -56,6 +56,7 @@ import org.apache.cxf.jaxrs.utils.JAXRSUtils;
 import org.apache.cxf.message.Exchange;
 import org.apache.cxf.message.Message;
 import org.apache.cxf.message.MessageContentsList;
+import org.apache.cxf.message.MessageImpl;
 import org.apache.cxf.phase.AbstractPhaseInterceptor;
 import org.apache.cxf.phase.Phase;
 
@@ -137,9 +138,11 @@ public class JAXRSInInterceptor extends AbstractPhaseInterceptor<Message> {
         List<String> ctHeaderValues = protocolHeaders.get(Message.CONTENT_TYPE);
         if (ctHeaderValues != null && !ctHeaderValues.isEmpty()) {
             requestContentType = ctHeaderValues.get(0);
+            //((MessageImpl) message).setContentType(requestContentType);
             message.put(Message.CONTENT_TYPE, requestContentType);
         }
         if (requestContentType == null) {
+            //requestContentType = (String)((MessageImpl) message).getContentType();
             requestContentType = (String)message.get(Message.CONTENT_TYPE);
 
             if (requestContentType == null) {
@@ -152,6 +155,7 @@ public class JAXRSInInterceptor extends AbstractPhaseInterceptor<Message> {
         List<String> acceptHeaderValues = protocolHeaders.get(Message.ACCEPT_CONTENT_TYPE);
         if (acceptHeaderValues != null && !acceptHeaderValues.isEmpty()) {
             acceptTypes = acceptHeaderValues.get(0);
+            //((MessageImpl) message).setAcceptContentType(acceptTypes);
             message.put(Message.ACCEPT_CONTENT_TYPE, acceptTypes);
         }
 
@@ -159,6 +163,7 @@ public class JAXRSInInterceptor extends AbstractPhaseInterceptor<Message> {
             acceptTypes = HttpUtils.getProtocolHeader(message, Message.ACCEPT_CONTENT_TYPE, null);
             if (acceptTypes == null) {
                 acceptTypes = "*/*";
+                //((MessageImpl) message).setAcceptContentType(acceptTypes);
                 message.put(Message.ACCEPT_CONTENT_TYPE, acceptTypes);
             }
         }
@@ -183,6 +188,7 @@ public class JAXRSInInterceptor extends AbstractPhaseInterceptor<Message> {
 
         boolean shouldFind = true;
 
+        //String ckey = ((MessageImpl) message).getBasePath() + ":" + rawPath + ":" + httpMethod + ":" + requestContentType + ":" + acceptTypes;
         String ckey = message.get(Message.BASE_PATH) + ":" + rawPath + ":" + httpMethod + ":" + requestContentType + ":" + acceptTypes;
 
         if (resourceMethodCache != null) {
@@ -198,15 +204,15 @@ public class JAXRSInInterceptor extends AbstractPhaseInterceptor<Message> {
                 setExchangeProperties(message, exchange, ori, matchedValues, resources.size());
 
                 if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
-                    Tr.debug(tc, "OperationResourceInfoStack on message: " + message.get(OperationResourceInfoStack.class));
+                    Tr.debug(tc, "OperationResourceInfoStack on message: " + ((MessageImpl) message).getOperationResourceInfoStack());
                 }
-                if (message.get(OperationResourceInfoStack.class) == null) {
+                if (((MessageImpl) message).getOperationResourceInfoStack() == null) {
                     oriStack = rmCache.getOperationResourceInfoStack();
                     if (oriStack != null) {
                         if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
                             Tr.debug(tc, "Setting OperationResourceInfoStack on message: " + oriStack);
                         }
-                        message.put(OperationResourceInfoStack.class, oriStack);
+                        ((MessageImpl) message).setOperationResourceInfoStack(oriStack);
                     }
                 }
                 shouldFind = false;
@@ -225,6 +231,7 @@ public class JAXRSInInterceptor extends AbstractPhaseInterceptor<Message> {
             org.apache.cxf.common.i18n.Message errorMsg =
                 new org.apache.cxf.common.i18n.Message("NO_ROOT_EXC",
                                                    BUNDLE,
+                                                   //((MessageImpl) message).getRequestURI(),
                                                    message.get(Message.REQUEST_URI),
                                                    rawPath);
             Level logLevel = JAXRSUtils.getExceptionLogLevel(message, NotFoundException.class);
@@ -240,7 +247,7 @@ public class JAXRSInInterceptor extends AbstractPhaseInterceptor<Message> {
             setExchangeProperties(message, exchange, ori, matchedValues, resources.size());
 
                 // The oriStack should now be set.
-                oriStack = message.get(OperationResourceInfoStack.class);
+                oriStack = (OperationResourceInfoStack) ((MessageImpl) message).getOperationResourceInfoStack();
                 if (resourceMethodCache != null) {
                     String mediaType = (String) message.getExchange().get(Message.CONTENT_TYPE);
                     resourceMethodCache.put(ckey, ori, matchedValues, mediaType, oriStack);

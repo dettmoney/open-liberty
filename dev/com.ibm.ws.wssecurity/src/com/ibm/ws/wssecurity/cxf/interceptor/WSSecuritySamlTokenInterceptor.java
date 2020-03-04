@@ -103,19 +103,19 @@ public class WSSecuritySamlTokenInterceptor extends SamlTokenInterceptor {
         boolean isOut = MessageUtils.isOutbound(message);
         if (tc.isDebugEnabled()) {
             Tr.debug(tc, " isReq:" + isReq + "isOut:" + isOut);
-        };
+        } ;
         if (isReq != isOut) {
             super.handleMessage(message);
             if (tc.isDebugEnabled()) {
                 Tr.debug(tc, "SamlTokenInterceptor handled(1)");
-            };
+            } ;
             return;
         }
         if (isReq) {
             super.handleMessage(message);
             if (tc.isDebugEnabled()) {
                 Tr.debug(tc, "SamlTokenInterceptor handled(1)");
-            };
+            } ;
             return;
         } else {
             if (message.containsKey(WSS4JInInterceptor.SECURITY_PROCESSED)) {
@@ -131,11 +131,11 @@ public class WSSecuritySamlTokenInterceptor extends SamlTokenInterceptor {
     private void processSamlToken(SoapMessage message) {
         if (tc.isDebugEnabled()) {
             Tr.debug(tc, "processSamlToken(1)");
-        };
+        } ;
         Header h = findSecurityHeader(message, false);
         if (tc.isDebugEnabled()) {
             Tr.debug(tc, "processSamlToken(2):" + h);
-        };
+        } ;
         if (h == null) {
             return;
         }
@@ -147,8 +147,7 @@ public class WSSecuritySamlTokenInterceptor extends SamlTokenInterceptor {
                 try {
                     List<WSSecurityEngineResult> samlResults = processToken(child, message);
                     if (samlResults != null) {
-                        List<WSHandlerResult> results = CastUtils.cast((List<?>) message
-                                        .get(WSHandlerConstants.RECV_RESULTS));
+                        List<WSHandlerResult> results = CastUtils.cast((List<?>) message.get(WSHandlerConstants.RECV_RESULTS));
                         if (results == null) {
                             results = new ArrayList<WSHandlerResult>();
                             message.put(WSHandlerConstants.RECV_RESULTS, results);
@@ -158,8 +157,7 @@ public class WSSecuritySamlTokenInterceptor extends SamlTokenInterceptor {
 
                         assertSamlTokens(message);
 
-                        Principal principal =
-                                        (Principal) samlResults.get(0).get(WSSecurityEngineResult.TAG_PRINCIPAL);
+                        Principal principal = (Principal) samlResults.get(0).get(WSSecurityEngineResult.TAG_PRINCIPAL);
                         message.put(WSS4JInInterceptor.PRINCIPAL_RESULT, principal);
 
                         SecurityContext sc = message.get(SecurityContext.class);
@@ -178,11 +176,10 @@ public class WSSecuritySamlTokenInterceptor extends SamlTokenInterceptor {
 
     @SuppressWarnings("unchecked")
     @Trivial
-    private List<WSSecurityEngineResult> processToken(Element tokenElement, final SoapMessage message)
-                    throws WSSecurityException {
+    private List<WSSecurityEngineResult> processToken(Element tokenElement, final SoapMessage message) throws WSSecurityException {
         if (tc.isDebugEnabled()) {
             Tr.debug(tc, "processToken(1):" + tokenElement);
-        };
+        } ;
         WSDocInfo wsDocInfo = new WSDocInfo(tokenElement.getOwnerDocument());
         RequestData data = new RequestData() {
             @Override
@@ -200,7 +197,7 @@ public class WSSecuritySamlTokenInterceptor extends SamlTokenInterceptor {
                 }
                 if (tc.isDebugEnabled()) {
                     Tr.debug(tc, "found key?:" + (key != null));
-                };
+                } ;
                 if (key != null) {
                     Object o = message.getContextualProperty(key);
                     try {
@@ -210,8 +207,7 @@ public class WSSecuritySamlTokenInterceptor extends SamlTokenInterceptor {
                             return (Validator) ((Class<?>) o).newInstance();
                         } else if (o instanceof String) {
                             return (Validator) ClassLoaderUtils.loadClass(o.toString(),
-                                                                          WSSecuritySamlTokenInterceptor.class)
-                                            .newInstance();
+                                                                          WSSecuritySamlTokenInterceptor.class).newInstance();
                         }
                     } catch (RuntimeException t) {
                         throw t;
@@ -229,7 +225,7 @@ public class WSSecuritySamlTokenInterceptor extends SamlTokenInterceptor {
         Object o = message.getContextualProperty(CXF_SIG_PROPS);
         if (tc.isDebugEnabled()) {
             Tr.debug(tc, "found sig object:" + (o != null));
-        };
+        } ;
         if (o != null) {
             Map<String, Object> sigPropsMap = (Map<String, Object>) o;
             Properties sigProps = new Properties();
@@ -245,7 +241,7 @@ public class WSSecuritySamlTokenInterceptor extends SamlTokenInterceptor {
         Object oe = message.getContextualProperty(CXF_ENC_PROPS);
         if (tc.isDebugEnabled()) {
             Tr.debug(tc, "found enc object:" + (oe != null));
-        };
+        } ;
         if (oe != null) {
             Map<String, Object> encPropsMap = (Map<String, Object>) oe;
             Properties encProps = new Properties();
@@ -258,8 +254,7 @@ public class WSSecuritySamlTokenInterceptor extends SamlTokenInterceptor {
             data.setSigCrypto(encCrypto);
         }
 
-        List<WSSecurityEngineResult> results =
-                        p.handleToken(tokenElement, data, wsDocInfo);
+        List<WSSecurityEngineResult> results = p.handleToken(tokenElement, data, wsDocInfo);
         return results;
     }
 
@@ -267,7 +262,7 @@ public class WSSecuritySamlTokenInterceptor extends SamlTokenInterceptor {
     private SamlToken assertSamlTokens(SoapMessage message) {
         if (tc.isDebugEnabled()) {
             Tr.debug(tc, "assertSamlToken(1)");
-        };
+        } ;
         AssertionInfoMap aim = message.get(AssertionInfoMap.class);
         Collection<AssertionInfo> ais = aim.getAssertionInfo(SP12Constants.SAML_TOKEN);
         SamlToken tok = null;
@@ -285,7 +280,7 @@ public class WSSecuritySamlTokenInterceptor extends SamlTokenInterceptor {
         }
         if (tc.isDebugEnabled()) {
             Tr.debug(tc, "assertSamlToken(2)" + (tok != null));
-        };
+        } ;
         return tok;
     }
 
@@ -293,12 +288,12 @@ public class WSSecuritySamlTokenInterceptor extends SamlTokenInterceptor {
     private Header findSecurityHeader(SoapMessage message, boolean create) {
         if (tc.isDebugEnabled()) {
             Tr.debug(tc, "findSecurityHeader(1) create" + create);
-        };
+        } ;
         for (Header h : message.getHeaders()) {
             QName n = h.getName();
             if (n.getLocalPart().equals("Security")
                 && (n.getNamespaceURI().equals(WSConstants.WSSE_NS)
-                || n.getNamespaceURI().equals(WSConstants.WSSE11_NS))) {
+                    || n.getNamespaceURI().equals(WSConstants.WSSE11_NS))) {
                 return h;
             }
         }
@@ -307,7 +302,7 @@ public class WSSecuritySamlTokenInterceptor extends SamlTokenInterceptor {
         }
         if (tc.isDebugEnabled()) {
             Tr.debug(tc, "findSecurityHeader(2)");
-        };
+        } ;
         Document doc = DOMUtils.createDocument();
         Element el = doc.createElementNS(WSConstants.WSSE_NS, "wsse:Security");
         el.setAttributeNS(WSConstants.XMLNS_NS, "xmlns:wsse", WSConstants.WSSE_NS);
@@ -326,15 +321,14 @@ public class WSSecuritySamlTokenInterceptor extends SamlTokenInterceptor {
             handler = (CallbackHandler) o;
         } else if (o instanceof String) {
             try {
-                handler = (CallbackHandler) ClassLoaderUtils
-                                .loadClass((String) o, this.getClass()).newInstance();
+                handler = (CallbackHandler) ClassLoaderUtils.loadClass((String) o, this.getClass()).newInstance();
             } catch (Exception e) {
                 handler = null;
             }
         }
         if (tc.isDebugEnabled()) {
             Tr.debug(tc, "getCallBack():" + handler);
-        };
+        } ;
         return handler;
     }
 

@@ -89,12 +89,6 @@ public abstract class AbstractHTTPDestination
     extends AbstractMultiplexDestination
     implements Configurable, Assertor {
 
-    public static final String HTTP_REQUEST = "HTTP.REQUEST";
-    public static final String HTTP_RESPONSE = "HTTP.RESPONSE";
-    public static final String HTTP_CONTEXT = "HTTP.CONTEXT";
-    public static final String HTTP_CONFIG = "HTTP.CONFIG";
-    public static final String HTTP_CONTEXT_MATCH_STRATEGY = "HTTP_CONTEXT_MATCH_STRATEGY";
-
     public static final String RESPONSE_HEADERS_COPIED = "http.headers.copied";
     public static final String RESPONSE_COMMITED = "http.response.done";
     public static final String REQUEST_REDIRECTED = "http.request.redirected";
@@ -309,15 +303,15 @@ public abstract class AbstractHTTPDestination
         message.put(SERVICE_REDIRECTION, request.getAttribute(SERVICE_REDIRECTION));
     }
 
-    protected void setupMessage(final Message inMessage,
+    protected void setupMessage(final Message message,
                                 final ServletConfig config,
                                 final ServletContext context,
                                 final HttpServletRequest req,
                                 final HttpServletResponse resp) throws IOException {
-        setupContinuation(inMessage,
+        setupContinuation(message,
                           req,
                           resp);
-
+        MessageImpl inMessage = (MessageImpl) message;
         final Exchange exchange = inMessage.getExchange();
         DelegatingInputStream in = new DelegatingInputStream(req.getInputStream()) {
             @Override
@@ -328,7 +322,7 @@ public abstract class AbstractHTTPDestination
                     //so they can be queried later for things like paths and schemes
                     //and such like that.
                     //Please note, exchange used to always get the "current" message
-                    exchange.getInMessage().put(HTTP_REQUEST, new HttpServletRequestSnapshot(req));
+                    ((MessageImpl) exchange.getInMessage()).setHttpRequest(new HttpServletRequestSnapshot(req));
                 }
                 super.cacheInput();
             }
@@ -341,16 +335,19 @@ public abstract class AbstractHTTPDestination
 
         inMessage.setContent(DelegatingInputStream.class, in);
         inMessage.setContent(InputStream.class, in);
-        inMessage.put(HTTP_REQUEST, req);
-        inMessage.put(HTTP_RESPONSE, resp);
-        inMessage.put(HTTP_CONTEXT, context);
-        inMessage.put(HTTP_CONFIG, config);
-        inMessage.put(HTTP_CONTEXT_MATCH_STRATEGY, contextMatchStrategy);
+        inMessage.setHttpRequest(req);
+        inMessage.setHttpResponse(resp);
+        inMessage.setServletContext(context);
+        inMessage.setServletConfig(config);
+        inMessage.setServletContextMatchStrategy(contextMatchStrategy);
 
+        //inMessage.setHttpRequestMethod(req.getMethod());
         inMessage.put(Message.HTTP_REQUEST_METHOD, req.getMethod());
         String requestURI = req.getRequestURI();
+        //inMessage.setRequestURI(requestURI);
         inMessage.put(Message.REQUEST_URI, requestURI);
         String requestURL = req.getRequestURL().toString();
+        //inMessage.setRequestURL(requestURL);
         inMessage.put(Message.REQUEST_URL, requestURL);
         String contextPath = req.getContextPath();
         if (contextPath == null) {
@@ -363,9 +360,11 @@ public abstract class AbstractHTTPDestination
         String contextServletPath = contextPath + servletPath;
         String pathInfo = req.getPathInfo();
         if (pathInfo != null) {
-            inMessage.put(Message.PATH_INFO, contextServletPath + pathInfo);
+            //inMessage.setPathInfo(contextServletPath + pathInfo);
+        	inMessage.put(Message.PATH_INFO, contextServletPath + pathInfo);
         } else {
-            inMessage.put(Message.PATH_INFO, requestURI);
+            //inMessage.setPathInfo(requestURI);
+        	inMessage.put(Message.PATH_INFO, requestURI);
         }
         if (!StringUtils.isEmpty(requestURI)) {
             int index = requestURL.indexOf(requestURI);
@@ -376,25 +375,33 @@ public abstract class AbstractHTTPDestination
                 // http://localhost:8080/app will make it easy to refer to non CXF resources
                 String schemaInfo = requestURL.substring(0, index);
                 String basePathWithContextOnly = schemaInfo + contextPath;
+                //inMessage.setHttpBasePath(basePathWithContextOnly);
                 inMessage.put(HTTP_BASE_PATH, basePathWithContextOnly);
             }
         } else if (!StringUtils.isEmpty(servletPath) && requestURL.endsWith(servletPath)) {
             int index = requestURL.lastIndexOf(servletPath);
             if (index > 0) {
-                inMessage.put(HTTP_BASE_PATH, requestURL.substring(0, index));
+                //inMessage.setHttpBasePath(requestURL.substring(0, index));
+            	inMessage.put(HTTP_BASE_PATH, requestURL.substring(0, index));
             }
         }
         String contentType = req.getContentType();
+        //inMessage.setContentType(contentType);
         inMessage.put(Message.CONTENT_TYPE, contentType);
         setEncoding(inMessage, req, contentType);
 
+        //inMessage.setQueryString(req.getQueryString());
         inMessage.put(Message.QUERY_STRING, req.getQueryString());
 
+        //inMessage.setAcceptContentType(req.getHeader("Accept"));
         inMessage.put(Message.ACCEPT_CONTENT_TYPE, req.getHeader("Accept"));
         String basePath = getBasePath(contextServletPath);
         if (!StringUtils.isEmpty(basePath)) {
-            inMessage.put(Message.BASE_PATH, basePath);
+            //inMessage.setBasePath(basePath);
+        	inMessage.put(Message.BASE_PATH, basePath);
         }
+        //inMessage.setFixedParameterOrder(isFixedParameterOrder());
+        //inMessage.setAsyncPostResponseDispatch(Boolean.TRUE);
         inMessage.put(Message.FIXED_PARAMETER_ORDER, isFixedParameterOrder());
         inMessage.put(Message.ASYNC_POST_RESPONSE_DISPATCH, Boolean.TRUE);
 
@@ -410,17 +417,22 @@ public abstract class AbstractHTTPDestination
             }
         };
 
+        //inMessage.setSecurityContext(httpSecurityContext);
         inMessage.put(SecurityContext.class, httpSecurityContext);
 
         Headers headers = new Headers(inMessage);
         headers.copyFromRequest(req);
+        
         String credentials = headers.getAuthorization();
         AuthorizationPolicy authPolicy = getAuthorizationPolicyFromMessage(credentials,
                                                                            httpSecurityContext);
+        //inMessage.setAuthorizationPolicy(authPolicy);
         inMessage.put(AuthorizationPolicy.class, authPolicy);
 
         propogateSecureSession(req, inMessage);
 
+        //inMessage.setCertConstraints(certConstraints);
+        //inMessage.setInterceptors(
         inMessage.put(CertConstraints.class.getName(), certConstraints);
         inMessage.put(Message.IN_INTERCEPTORS,
                 Arrays.asList(new Interceptor[] {CertConstraintsInterceptor.INSTANCE}));
@@ -448,7 +460,7 @@ public abstract class AbstractHTTPDestination
         }
     }
 
-    private String setEncoding(final Message inMessage,
+    private String setEncoding(final MessageImpl inMessage,
                                final HttpServletRequest req,
                                final String contentType) throws IOException {
 
@@ -470,6 +482,7 @@ public abstract class AbstractHTTPDestination
                 Tr.warning(tc, m);
                 throw new IOException(m);
             }
+            //inMessage.setEncoding(normalizedEncoding);
             inMessage.put(Message.ENCODING, normalizedEncoding);
         }
         return contentType;
@@ -548,7 +561,7 @@ public abstract class AbstractHTTPDestination
      */
     @Override
     protected Conduit getInbuiltBackChannel(Message inMessage) {
-        HttpServletResponse response = (HttpServletResponse) inMessage.get(HTTP_RESPONSE);
+        HttpServletResponse response = (HttpServletResponse) ((MessageImpl) inMessage).getHttpResponse();
         return new BackChannelConduit(response);
     }
 
@@ -682,7 +695,7 @@ public abstract class AbstractHTTPDestination
         }
 
         if (oneWay) {
-            outMessage.remove(HTTP_RESPONSE);
+            ((MessageImpl) outMessage).removeHttpResponse();
         }
         return responseStream;
     }
@@ -730,7 +743,7 @@ public abstract class AbstractHTTPDestination
     }
 
     private HttpServletResponse getHttpResponseFromMessage(Message message) throws IOException {
-        Object responseObj = message.get(HTTP_RESPONSE);
+        Object responseObj = ((MessageImpl) message).getHttpResponse();
         if (responseObj instanceof HttpServletResponse) {
             return (HttpServletResponse) responseObj;
         } else if (null != responseObj) {
@@ -771,7 +784,7 @@ public abstract class AbstractHTTPDestination
          */
         @Override
         public void prepare(Message message) throws IOException {
-            message.put(HTTP_RESPONSE, response);
+            ((MessageImpl) message).setHttpResponse(response);
             OutputStream os = message.getContent(OutputStream.class);
             if (os == null) {
                 message.setContent(OutputStream.class,
