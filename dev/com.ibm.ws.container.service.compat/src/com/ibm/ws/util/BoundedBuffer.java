@@ -14,13 +14,14 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+import com.ibm.ws.kernel.service.util.AvailableProcessorsListener;
 import com.ibm.ws.kernel.service.util.CpuInfo;
 
 /**
  * A fixed size FIFO of Objects. Null objects are not allowed in
  * the buffer.
  */
-public class BoundedBuffer {
+public class BoundedBuffer implements AvailableProcessorsListener {
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     //
     // Implementation Note: the buffer is implemented using a circular
@@ -91,8 +92,11 @@ public class BoundedBuffer {
      */
 
     // D312598 - begin
-    private static final int SPINS_TAKE_;
-    private static final int SPINS_PUT_;
+    private static AtomicInteger SPINS_TAKE_;
+    private static AtomicInteger SPINS_PUT_;
+    private static boolean spinsTakeProp = true;
+    private static boolean spinsPutProp = true;
+
     private static final boolean YIELD_TAKE_;
     private static final boolean YIELD_PUT_;
 
@@ -109,8 +113,21 @@ public class BoundedBuffer {
 
         // D638088 - modified spinning defaults to adjust to the number
         // of physical processors on host system.
-        SPINS_TAKE_ = Integer.getInteger("com.ibm.ws.util.BoundedBuffer.spins_take", CpuInfo.getAvailableProcessors() - 1).intValue(); // D371967
-        SPINS_PUT_ = Integer.getInteger("com.ibm.ws.util.BoundedBuffer.spins_put", SPINS_TAKE_ / 4).intValue(); // D371967
+
+        //SPINS_TAKE_ = Integer.getInteger("com.ibm.ws.util.BoundedBuffer.spins_take", CpuInfo.getAvailableProcessors().get() - 1).intValue(); // D371967
+        //SPINS_PUT_ = Integer.getInteger("com.ibm.ws.util.BoundedBuffer.spins_put", SPINS_TAKE_ / 4).intValue(); // D371967
+        Integer spinsTake = Integer.getInteger("com.ibm.ws.util.BoundedBuffer.spins_take", null); // D371967
+        if (spinsTake == null) {
+            spinsTakeProp = false;
+        }
+
+        SPINS_TAKE_ = new AtomicInteger(spinsTake == null ? (CpuInfo.getAvailableProcessors().get() - 1) : spinsTake.intValue());
+
+        Integer spinsPut = Integer.getInteger("com.ibm.ws.util.BoundedBuffer.spins_put", null); // D371967
+        if (spinsPut == null) {
+            spinsPutProp = false;
+        }
+        SPINS_PUT_ = new AtomicInteger(spinsPut == null ? (SPINS_TAKE_.get() / 4) : spinsPut.intValue());
 
         // D638088 - default split threshold to 50 (default web container thread
         // pool). This is
@@ -146,7 +163,7 @@ public class BoundedBuffer {
         private final ReentrantReadWriteLock rwl = new ReentrantReadWriteLock();
         private final Lock readLock = rwl.readLock();
         private final Lock writeLock = rwl.writeLock();
-        private final boolean useRwl = CpuInfo.getAvailableProcessors() > 4;
+        private final boolean useRwl = CpuInfo.getAvailableProcessors().get() > 4;
         private int val_;
 
         public LiteAtomicInteger(int v) {
@@ -203,7 +220,8 @@ public class BoundedBuffer {
     }
 
     // D371967: An easily-identified marker class used for locking
-    private static class PutQueueLock extends Object {}
+    private static class PutQueueLock extends Object {
+    }
 
     private final PutQueueLock putQueue_ = new PutQueueLock();
     private int putQueueLen_ = 0;
@@ -395,8 +413,8 @@ public class BoundedBuffer {
      * Create a BoundedBuffer with the given capacity.
      *
      * @exception IllegalArgumentException
-     *                if the requested capacity
-     *                is less or equal to zero.
+     *                                         if the requested capacity
+     *                                         is less or equal to zero.
      */
     public BoundedBuffer(int capacity) throws IllegalArgumentException {
 
@@ -416,6 +434,7 @@ public class BoundedBuffer {
             getQueueLocks_[i] = new GetQueueLock();
         }
 
+        CpuInfo.addAvailableProcessorsListener(this);
         // System.out.println("Created bounded buffer: capacity=" + capacity +
         // ", locks=" + subPoolLength);
     }
@@ -459,9 +478,9 @@ public class BoundedBuffer {
      * the call will block indefinitely until space is freed up.
      *
      * @param x
-     *            the object being placed in the buffer.
+     *              the object being placed in the buffer.
      * @exception IllegalArgumentException
-     *                if the object is null.
+     *                                         if the object is null.
      */
     public void put(Object x) throws InterruptedException {
         if (x == null) {
@@ -487,7 +506,7 @@ public class BoundedBuffer {
                 return;
             }
 
-            int spinctr = SPINS_PUT_;
+            int spinctr = SPINS_PUT_.get();
             while (numberOfUsedSlots.get() >= buffer.length) {
                 // busy wait
                 if (spinctr > 0) {
@@ -510,13 +529,13 @@ public class BoundedBuffer {
      * period.
      *
      * @param x
-     *            the object being placed in the buffer.
+     *                            the object being placed in the buffer.
      * @param timeoutInMillis
-     *            the timeout period in milliseconds.
+     *                            the timeout period in milliseconds.
      * @return the object that was put into the buffer (x) or
      *         null in the event that the request timed out.
      * @exception IllegalArgumentException
-     *                if the object is null.
+     *                                         if the object is null.
      */
     public Object put(Object x, long timeoutInMillis) throws InterruptedException {
         if (x == null) {
@@ -544,7 +563,7 @@ public class BoundedBuffer {
             if (start == -1)
                 start = System.currentTimeMillis();
 
-            int spinctr = SPINS_PUT_;
+            int spinctr = SPINS_PUT_.get();
             while (numberOfUsedSlots.get() >= buffer.length) {
                 if (waitTime <= 0) {
                     return null;
@@ -571,16 +590,16 @@ public class BoundedBuffer {
      * specified timeout period.
      *
      * @param x
-     *            the object being placed in the buffer.
+     *                            the object being placed in the buffer.
      * @param timeoutInMillis
-     *            the timeout period in milliseconds.
+     *                            the timeout period in milliseconds.
      * @param maximumCapacity
-     *            the desired maximum capacity of the buffer
+     *                            the desired maximum capacity of the buffer
      * @return the object that was put into the buffer (x) or
      *         null in the event that the request timed out.
      * @exception IllegalArgumentException
-     *                if the object is null or if the
-     *                supplied maximum capacity exceeds the buffer's size.
+     *                                         if the object is null or if the
+     *                                         supplied maximum capacity exceeds the buffer's size.
      */
     public Object put(Object x, long timeoutInMillis, int maximumCapacity) throws InterruptedException {
         if ((x == null) || (maximumCapacity > buffer.length)) {
@@ -609,7 +628,7 @@ public class BoundedBuffer {
             if (start == -1)
                 start = System.currentTimeMillis();
 
-            int spinctr = SPINS_PUT_;
+            int spinctr = SPINS_PUT_.get();
             while (numberOfUsedSlots.get() >= buffer.length) {
                 if (waitTime <= 0) {
                     return null;
@@ -636,10 +655,10 @@ public class BoundedBuffer {
      * time, waiting for space to be freed up.
      *
      * @param x
-     *            the object being placed into the buffer.
+     *                    the object being placed into the buffer.
      * @param timeout
-     *            the maximum amount of time (in milliseconds)
-     *            that the caller is willing to wait if the buffer is full.
+     *                    the maximum amount of time (in milliseconds)
+     *                    that the caller is willing to wait if the buffer is full.
      * @return true if the object was added to the buffer; false if
      *         it was not added before the timeout expired.
      */
@@ -672,7 +691,7 @@ public class BoundedBuffer {
             if (start == -1)
                 start = System.currentTimeMillis();
 
-            int spinctr = SPINS_PUT_;
+            int spinctr = SPINS_PUT_.get();
             while (numberOfUsedSlots.get() >= buffer.length) {
                 if (waitTime <= 0) {
                     return false;
@@ -723,7 +742,7 @@ public class BoundedBuffer {
                 return old;
             }
 
-            int spinctr = SPINS_TAKE_;
+            int spinctr = SPINS_TAKE_.get();
             while (numberOfUsedSlots.get() <= 0) {
                 // busy wait
                 if (spinctr > 0) {
@@ -748,10 +767,10 @@ public class BoundedBuffer {
      * a specified amount of time before it gives up.
      *
      * @param timeout
-     *            -
-     *            the amount of time (in milliseconds), that the caller is willing
-     *            to wait
-     *            in the event of an empty buffer.
+     *                    -
+     *                    the amount of time (in milliseconds), that the caller is willing
+     *                    to wait
+     *                    in the event of an empty buffer.
      */
     public Object poll(long timeout) throws InterruptedException {
 
@@ -786,7 +805,7 @@ public class BoundedBuffer {
             if (start == -1)
                 start = System.currentTimeMillis();
 
-            int spinctr = SPINS_TAKE_;
+            int spinctr = SPINS_TAKE_.get();
             while (numberOfUsedSlots.get() <= 0) {
                 if (waitTime <= 0) {
                     return null;
@@ -865,7 +884,7 @@ public class BoundedBuffer {
      * Increases the buffer's capacity by the given amount.
      *
      * @param additionalCapacity
-     *            The amount by which the buffer's capacity should be increased.
+     *                               The amount by which the buffer's capacity should be increased.
      */
     public synchronized void expand(int additionalCapacity) {
         if (additionalCapacity <= 0) {
@@ -973,6 +992,17 @@ public class BoundedBuffer {
         }
 
         return false;
+    }
+
+    @Override
+    public void setAvailableProcessors(int availableProcessors) {
+        if (!spinsTakeProp) {
+            SPINS_TAKE_.set(availableProcessors - 1);
+        }
+
+        if (!spinsPutProp) {
+            SPINS_PUT_.set(SPINS_TAKE_.get() / 4);
+        }
     }
 
     // private void dump() {

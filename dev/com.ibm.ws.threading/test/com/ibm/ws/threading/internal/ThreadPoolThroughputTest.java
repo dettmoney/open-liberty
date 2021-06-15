@@ -32,11 +32,12 @@ public class ThreadPoolThroughputTest {
 
     private static final int TERMINATION_WAIT_TIME = 30;
 
-    static int poolSize = CpuInfo.getAvailableProcessors();
+    static int poolSize = CpuInfo.getAvailableProcessors().get();
 
     Runnable doNothingRunnable = new Runnable() {
         @Override
-        public void run() {}
+        public void run() {
+        }
     };
 
     static class NotifyOnCompleteRunnable implements Runnable {
@@ -195,7 +196,7 @@ public class ThreadPoolThroughputTest {
     }
 
     public static void main(String[] args) throws Exception {
-        final int availableProcessors = CpuInfo.getAvailableProcessors();
+        final int availableProcessors = CpuInfo.getAvailableProcessors().get();
         boolean warmupPhase = true;
         for (poolSize = 5 * availableProcessors; poolSize > 0; poolSize--) {
 

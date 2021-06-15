@@ -602,7 +602,7 @@ public final class DestinationManager extends SIMPItemStream
                 //get the thread pool size from the custom property
                 maxThreadPoolSize = messageProcessor.getCustomProperties().get_max_reconstitute_threadpool_size();
 
-                int noOfCores = CpuInfo.getAvailableProcessors();
+                int noOfCores = CpuInfo.getAvailableProcessors().get();
 
                 if (maxThreadPoolSize <= 0)
                 {

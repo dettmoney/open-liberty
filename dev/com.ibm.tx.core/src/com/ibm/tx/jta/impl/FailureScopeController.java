@@ -62,9 +62,10 @@ public class FailureScopeController {
         }
     });
 
-    protected static final boolean isConcurrent = CpuInfo.getAvailableProcessors() > SMP_THRESH;
+    protected static final boolean isConcurrent = CpuInfo.getAvailableProcessors().get() > SMP_THRESH;
 
-    protected FailureScopeController() {}
+    protected FailureScopeController() {
+    }
 
     @SuppressWarnings("unused")
     public FailureScopeController(FailureScope fs) throws SystemException {
@@ -165,7 +166,7 @@ public class FailureScopeController {
         if (tc.isEntryEnabled())
             Tr.entry(tc, "shutdown", new Object[] { this, Boolean.valueOf(immediate) });
 
-        // As long as we are not being requsted to perform an immediate shutdown and recovery
+        // As long as we are not being requested to perform an immediate shutdown and recovery
         // processing was not prevented in the first place, perform the shutdown logic.
         // I'll preserve the logic here for 232512 but it might be OK to skip this
         // in the absence of a recovery manager
@@ -301,10 +302,10 @@ public class FailureScopeController {
      * This method is called to register the creation of a new transaction associated
      * with the managed failure scope.
      *
-     * @param tran The transaction identity object
+     * @param tran      The transaction identity object
      * @param recovered Flag to indicate if the new transaction was created as part
-     *            of a recovery process for this failure scope (true) or
-     *            normal running (false)
+     *                      of a recovery process for this failure scope (true) or
+     *                      normal running (false)
      */
     public void registerTransaction(TransactionImpl tran, boolean recovered) {
         if (tc.isEntryEnabled())

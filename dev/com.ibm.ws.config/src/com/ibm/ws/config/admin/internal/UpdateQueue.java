@@ -148,7 +148,7 @@ class UpdateQueue<T> {
          * subclass the ThreadPoolExecutor to provide some debug info.
          * Pass in the new RejectedExecutionHandler defined above.
          */
-        int maxSize = CpuInfo.getAvailableProcessors();
+        int maxSize = CpuInfo.getAvailableProcessors().get();
         threadPool = new ScheduledThreadPoolExecutor(0, threadFactory, rejectionHandler);
         threadPool.setMaximumPoolSize(maxSize);
         threadPool.setKeepAliveTime(60, TimeUnit.SECONDS);

@@ -13,8 +13,6 @@ package com.ibm.io.async;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 
-import com.ibm.ws.kernel.service.util.CpuInfo;
-
 //import java.util.MissingResourceException;
 //import java.util.ResourceBundle;
 //import java.util.logging.Level;
@@ -74,7 +72,7 @@ class AsyncProperties {
     static boolean timerSleepAlways = true;
 
     // # Sets the maximum number of threads that can wait on events concurrently.
-    static int maxThreadsWaitingForEvents = 1;
+    static Integer maxThreadsWaitingForEvents = 1;
 
     // # Sets if timeouts should be disabled.
     // # Condition: true = disable timeouts
@@ -121,11 +119,7 @@ class AsyncProperties {
 
             timerSleepAlways = Boolean.parseBoolean(System.getProperty("com.ibm.io.async.AIOTimerSleepAlways"));
 
-            if (System.getProperty("com.ibm.io.async.AIOMaxThreadsWaitingForEvents") != null) {
-                maxThreadsWaitingForEvents = Integer.parseInt(System.getProperty("com.ibm.io.async.AIOMaxThreadsWaitingForEvents"));
-            } else {
-                maxThreadsWaitingForEvents = CpuInfo.getAvailableProcessors();
-            }
+            maxThreadsWaitingForEvents = Integer.getInteger("com.ibm.io.async.AIOMaxThreadsWaitingForEvents", null);
 
             disableTimeouts = Boolean.parseBoolean(System.getProperty("com.ibm.io.async.AIODisableTimeouts"));
 

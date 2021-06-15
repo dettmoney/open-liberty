@@ -20,6 +20,14 @@ import java.lang.management.ManagementFactory;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.nio.charset.StandardCharsets;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.management.MBeanServer;
 import javax.management.ObjectName;
@@ -39,9 +47,11 @@ public class CpuInfo {
      */
     private final static TraceComponent tc = Tr.register(CpuInfo.class);
 
+    private static final ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
     private final static CpuInfo INSTANCE = new CpuInfo();
 
-    private final int AVAILABLE_PROCESSORS;
+    private final AtomicInteger AVAILABLE_PROCESSORS = new AtomicInteger(-1);
+    private final CPUCount cpuCount;
     // For CPU usage calculation
     // Initialized lazily to avoid CPU usage during startup.
     private CpuInfoAccessor osmx;
@@ -49,16 +59,23 @@ public class CpuInfo {
     private long lastProcessCPUTime = 0;
     private double lastProcessCpuUsage = -1;
     private long lastSystemTimeMillis = -1;
+    private static IntervalTask activeTask;
+    private static ScheduledFuture<?> future;
+
+    private static final long INTERVAL = 10; // in minutes
+    private static Collection<AvailableProcessorsListener> listeners = Collections.synchronizedCollection(new HashSet<AvailableProcessorsListener>());
 
     private CpuInfo() {
-        // find available processors
+        activeTask = new IntervalTask();
+        future = executor.scheduleAtFixedRate(activeTask, INTERVAL, INTERVAL, TimeUnit.MINUTES);
+        cpuCount = new CPUCount();
         int runtimeAvailableProcessors = Runtime.getRuntime().availableProcessors();
         int fileSystemAvailableProcessors = getAvailableProcessorsFromFilesystem();
 
         if (fileSystemAvailableProcessors <= 0 || fileSystemAvailableProcessors > runtimeAvailableProcessors) {
-            AVAILABLE_PROCESSORS = runtimeAvailableProcessors;
+            AVAILABLE_PROCESSORS.set(currentNumberOfProcessors = runtimeAvailableProcessors);
         } else {
-            AVAILABLE_PROCESSORS = fileSystemAvailableProcessors;
+            AVAILABLE_PROCESSORS.set(currentNumberOfProcessors = fileSystemAvailableProcessors);
         }
 
         int nsFactor = 1;
@@ -129,7 +146,7 @@ public class CpuInfo {
             long d1 = (currentTimeMs - lastSystemTimeMillis) * 1000000;
             long d2 = processCpuTime - lastProcessCPUTime;
             cpuUsage = (double) d2 / d1;
-            cpuUsage = (cpuUsage / AVAILABLE_PROCESSORS) * cpuNSFactor * 100;
+            cpuUsage = (cpuUsage / AVAILABLE_PROCESSORS.get()) * cpuNSFactor * 100;
 
             lastSystemTimeMillis = currentTimeMs;
             lastProcessCPUTime = processCpuTime;
@@ -224,8 +241,8 @@ public class CpuInfo {
      *
      * @return int available processors
      */
-    public static int getAvailableProcessors() {
-        return INSTANCE.AVAILABLE_PROCESSORS;
+    public static CPUCount getAvailableProcessors() {
+        return INSTANCE.cpuCount;
     }
 
     /**
@@ -244,6 +261,14 @@ public class CpuInfo {
      */
     public static double getSystemCpuUsage() {
         return INSTANCE.getSystemCPU();
+    }
+
+    public static void addAvailableProcessorsListener(AvailableProcessorsListener listener) {
+        listeners.add(listener);
+    }
+
+    public static void removeAvailableProcessorsListener(AvailableProcessorsListener listener) {
+        listeners.remove(listener);
     }
 
     public static CpuInfoAccessor createCpuInfoAccessor() {
@@ -344,5 +369,60 @@ public class CpuInfo {
                 return -1;
             }
         }
+    }
+
+    private static int currentNumberOfProcessors = -1;
+    private static final Object taskSync = new Object();
+
+    /**
+     * Timer task that queries available process cpus.
+     */
+    class IntervalTask implements Runnable {
+
+        @Override
+        public void run() {
+            // find available processors
+            int runtimeAvailableProcessors = Runtime.getRuntime().availableProcessors();
+            int fileSystemAvailableProcessors = getAvailableProcessorsFromFilesystem();
+
+            synchronized (taskSync) {
+                if (fileSystemAvailableProcessors <= 0 || fileSystemAvailableProcessors > runtimeAvailableProcessors) {
+                    // Should we only set if it's different than previous value?
+                    if (currentNumberOfProcessors != runtimeAvailableProcessors) {
+                        AVAILABLE_PROCESSORS.set(currentNumberOfProcessors = runtimeAvailableProcessors);
+                        notifyListeners(currentNumberOfProcessors);
+                    }
+                } else if (currentNumberOfProcessors != fileSystemAvailableProcessors) {
+                    AVAILABLE_PROCESSORS.set(currentNumberOfProcessors = fileSystemAvailableProcessors);
+                    notifyListeners(currentNumberOfProcessors);
+                }
+            }
+        }
+
+        public void notifyListeners(int processors) {
+            synchronized (listeners) {
+                for (AvailableProcessorsListener listener : listeners) {
+                    try {
+                        listener.setAvailableProcessors(processors);
+                    } catch (Throwable t) {
+                        if (tc.isDebugEnabled())
+                            Tr.debug(tc, "Caught exception: " + t.getMessage() + ".");
+                        FFDCFilter.processException(t, getClass().getName(), "notifyListeners");
+                    }
+                }
+            }
+        }
+    }
+
+    public class CPUCount {
+        public int get() {
+            return AVAILABLE_PROCESSORS.get();
+        }
+    }
+
+    public static void resetTimer() {
+        future.cancel(false);
+        activeTask = INSTANCE.new IntervalTask();
+        future = executor.scheduleAtFixedRate(activeTask, 0, INTERVAL, TimeUnit.MINUTES);
     }
 }
