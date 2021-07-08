@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 1997, 2010 IBM Corporation and others.
+ * Copyright (c) 1997, 2021 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -116,8 +116,6 @@ public class BoundedBuffer<T> implements BlockingQueue<T>, AvailableProcessorsLi
 
         //D638088 - modified spinning defaults to adjust to the number
         //of physical processors on host system.
-        //SPINS_TAKE_ = Integer.getInteger("com.ibm.ws.util.BoundedBuffer.spins_take", CpuInfo.getAvailableProcessors() - 1).intValue(); // D371967
-        //SPINS_PUT_ = Integer.getInteger("com.ibm.ws.util.BoundedBuffer.spins_put", SPINS_TAKE_ / 4).intValue(); // D371967
         Integer spinsTake = Integer.getInteger("com.ibm.ws.util.BoundedBuffer.spins_take", null); // D371967
         if (spinsTake == null) {
             spinsTakeProp = false;
@@ -268,7 +266,9 @@ public class BoundedBuffer<T> implements BlockingQueue<T>, AvailableProcessorsLi
         final T[] expeditedBuffer = (T[]) Array.newInstance(c, expeditedCapacity);
         this.expeditedBuffer = expeditedBuffer;
 
-        CpuInfo.addAvailableProcessorsListener(this);
+        if (!spinsTakeProp) {
+            CpuInfo.addAvailableProcessorsListener(this);
+        }
         //enable debug output
         if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
             Tr.debug(tc, "Created bounded buffer: capacity=" + capacity + " expedited capacity=" + expeditedCapacity);
@@ -1572,10 +1572,9 @@ public class BoundedBuffer<T> implements BlockingQueue<T>, AvailableProcessorsLi
     public void setAvailableProcessors(int availableProcessors) {
         if (!spinsTakeProp) {
             SPINS_TAKE_.set(availableProcessors - 1);
-        }
-
-        if (!spinsPutProp) {
-            SPINS_PUT_.set(SPINS_TAKE_.get() / 4);
+            if (!spinsPutProp) {
+                SPINS_PUT_.set(SPINS_TAKE_.get() / 4);
+            }
         }
     }
 

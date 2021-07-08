@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 1997, 2010 IBM Corporation and others.
+ * Copyright (c) 1997, 2021 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -434,7 +434,9 @@ public class BoundedBuffer implements AvailableProcessorsListener {
             getQueueLocks_[i] = new GetQueueLock();
         }
 
-        CpuInfo.addAvailableProcessorsListener(this);
+        if (!spinsTakeProp) {
+            CpuInfo.addAvailableProcessorsListener(this);
+        }
         // System.out.println("Created bounded buffer: capacity=" + capacity +
         // ", locks=" + subPoolLength);
     }
@@ -998,10 +1000,9 @@ public class BoundedBuffer implements AvailableProcessorsListener {
     public void setAvailableProcessors(int availableProcessors) {
         if (!spinsTakeProp) {
             SPINS_TAKE_.set(availableProcessors - 1);
-        }
-
-        if (!spinsPutProp) {
-            SPINS_PUT_.set(SPINS_TAKE_.get() / 4);
+            if (!spinsPutProp) {
+                SPINS_PUT_.set(SPINS_TAKE_.get() / 4);
+            }
         }
     }
 

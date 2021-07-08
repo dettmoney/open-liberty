@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2018,2019 IBM Corporation and others.
+ * Copyright (c) 2018,2021 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -73,9 +73,9 @@ public class CpuInfo {
         int fileSystemAvailableProcessors = getAvailableProcessorsFromFilesystem();
 
         if (fileSystemAvailableProcessors <= 0 || fileSystemAvailableProcessors > runtimeAvailableProcessors) {
-            AVAILABLE_PROCESSORS.set(currentNumberOfProcessors = runtimeAvailableProcessors);
+            AVAILABLE_PROCESSORS.set(runtimeAvailableProcessors);
         } else {
-            AVAILABLE_PROCESSORS.set(currentNumberOfProcessors = fileSystemAvailableProcessors);
+            AVAILABLE_PROCESSORS.set(fileSystemAvailableProcessors);
         }
 
         int nsFactor = 1;
@@ -371,8 +371,9 @@ public class CpuInfo {
         }
     }
 
-    private static int currentNumberOfProcessors = -1;
-    private static final Object taskSync = new Object();
+    private static long lastChecked = System.currentTimeMillis();
+
+    private static final long CATCH_UP_INTERVAL = 30000;
 
     /**
      * Timer task that queries available process cpus.
@@ -381,22 +382,31 @@ public class CpuInfo {
 
         @Override
         public void run() {
+            long current = System.currentTimeMillis();
+            if (lastChecked - current < CATCH_UP_INTERVAL) {
+                // on restore, we can get called back successively for every missed interval
+                // avoid the penalty of checking the Runtime in these cases
+                lastChecked = current;
+                return;
+            }
             // find available processors
             int runtimeAvailableProcessors = Runtime.getRuntime().availableProcessors();
             int fileSystemAvailableProcessors = getAvailableProcessorsFromFilesystem();
 
-            synchronized (taskSync) {
-                if (fileSystemAvailableProcessors <= 0 || fileSystemAvailableProcessors > runtimeAvailableProcessors) {
-                    // Should we only set if it's different than previous value?
-                    if (currentNumberOfProcessors != runtimeAvailableProcessors) {
-                        AVAILABLE_PROCESSORS.set(currentNumberOfProcessors = runtimeAvailableProcessors);
-                        notifyListeners(currentNumberOfProcessors);
-                    }
-                } else if (currentNumberOfProcessors != fileSystemAvailableProcessors) {
-                    AVAILABLE_PROCESSORS.set(currentNumberOfProcessors = fileSystemAvailableProcessors);
-                    notifyListeners(currentNumberOfProcessors);
+            int newAvailableProcessors;
+            if (fileSystemAvailableProcessors <= 0 || fileSystemAvailableProcessors > runtimeAvailableProcessors) {
+                newAvailableProcessors = runtimeAvailableProcessors;
+            } else {
+                newAvailableProcessors = fileSystemAvailableProcessors;
+            }
+
+            int currentNumberOfProcessors = AVAILABLE_PROCESSORS.get();
+            if (currentNumberOfProcessors != newAvailableProcessors) {
+                if (AVAILABLE_PROCESSORS.compareAndSet(currentNumberOfProcessors, newAvailableProcessors)) {
+                    notifyListeners(newAvailableProcessors);
                 }
             }
+            lastChecked = System.currentTimeMillis();
         }
 
         public void notifyListeners(int processors) {

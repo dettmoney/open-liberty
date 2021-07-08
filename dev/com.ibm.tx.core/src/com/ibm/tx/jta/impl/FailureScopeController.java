@@ -12,18 +12,19 @@ package com.ibm.tx.jta.impl;
  *******************************************************************************/
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.util.Collections;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import javax.transaction.SystemException;
 
 import com.ibm.tx.TranConstants;
-import com.ibm.tx.util.ConcurrentHashSet;
-import com.ibm.tx.util.logging.FFDCFilter;
-import com.ibm.tx.util.logging.Tr;
-import com.ibm.tx.util.logging.TraceComponent;
+import com.ibm.websphere.ras.Tr;
+import com.ibm.websphere.ras.TraceComponent;
 import com.ibm.ws.Transaction.JTA.FailureScopeLifeCycle;
 import com.ibm.ws.Transaction.JTA.FailureScopeLifeCycleHelper;
 import com.ibm.ws.Transaction.JTS.Configuration;
+import com.ibm.ws.ffdc.FFDCFilter;
 import com.ibm.ws.kernel.service.util.CpuInfo;
 import com.ibm.ws.recoverylog.spi.FailureScope;
 import com.ibm.ws.recoverylog.spi.RecoveryAgent;
@@ -79,7 +80,7 @@ public class FailureScopeController {
         // If small SMP system, use synchronized hashset. If a large system,
         // use a concurrent data structure
         if (isConcurrent) {
-            _transactions = new ConcurrentHashSet<TransactionImpl>();
+            _transactions = Collections.newSetFromMap(new ConcurrentHashMap<TransactionImpl, Boolean>(256, 0.75f, LocalTIDTable.getNumCHBuckets()));
         } else {
             _transactions = new java.util.HashSet<TransactionImpl>();
         }
